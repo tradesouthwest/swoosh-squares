@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Color Flash - Click Game</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      color: #fff;
+    }
+
+    .game-container {
+      width: 100%;
+      max-width: 800px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Start Screen */
+    .start-screen {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 400px;
+      width: 100%;
+    }
+
+    .start-content {
+      max-width: 500px;
+    }
+
+    .start-content h1 {
+      font-size: 4rem;
+      font-weight: bold;
+      margin-bottom: 1rem;
+      letter-spacing: -0.025em;
+      background: linear-gradient(135deg, #06b6d4 0%, #0ea5e9 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .start-content p {
+      color: #9ca3af;
+      font-size: 1.125rem;
+      margin-bottom: 2rem;
+      line-height: 1.6;
+    }
+
+    .start-btn {
+      padding: 1rem 3rem;
+      background: linear-gradient(135deg, #06b6d4 0%, #0ea5e9 100%);
+      color: #fff;
+      font-weight: bold;
+      font-size: 1.125rem;
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: all 200ms ease;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+    }
+
+    .start-btn:hover {
+      background: linear-gradient(135deg, #0891b2 0%, #0284c7 100%);
+      transform: scale(1.05);
+    }
+
+    .start-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* Game Header (compact) */
+    .header {
+      text-align: center;
+      margin-bottom: 1px;
+    }
+
+    .header h1 {
+      font-size: 1.75rem;
+      font-weight: bold;
+      margin-bottom: 0.25rem;
+      letter-spacing: -0.025em;
+    }
+
+    .header p {
+      color: #9ca3af;
+      font-size: 0.875rem;
+    }
+
+    .grid-wrapper {
+      background-color: #1e293b;
+      padding: 1.5rem;
+      border-radius: 0.75rem;
+      border: 1px solid #334155;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+
+    .game-grid {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 0.75rem;
+    }
+
+    .grid-square {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border: 2px solid #cbd5e1;
+      border-radius: 0.5rem;
+      background-color: #fff;
+      cursor: pointer;
+      transition: all 75ms ease;
+      font-size: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 38px;
+    }
+
+    @media (min-width: 900px) {
+      .grid-square {
+        min-height: 80px;
+      }
+    }
+
+    .grid-square:hover:not(:disabled) {
+      transform: scale(1.05);
+    }
+
+    .grid-square:active:not(:disabled) {
+      transform: scale(0.95);
+    }
+
+    .grid-square:disabled {
+      cursor: not-allowed;
+    }
+
+    .grid-square.red {
+      background-color: #ef4444;
+      box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.5);
+    }
+
+    .grid-square.green {
+      background-color: #22c55e;
+      box-shadow: 0 10px 15px -3px rgba(34, 197, 94, 0.5);
+    }
+
+    .grid-square.blue {
+      background-color: #3b82f6;
+      box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.5);
+    }
+
+    /* Score Area - Below Grid */
+    .score-area {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      width: 100%;
+      align-items: center;
+    }
+
+    .timer-display {
+      font-size: 2.5rem;
+      font-weight: bold;
+      text-align: center;
+      padding: .5rem;
+      border-radius: 0.5rem;
+      background-color: #3f3f46;
+      color: #06b6d4;
+      font-variant-numeric: tabular-nums;
+      min-width: 200px;
+      margin-top: 1rem;
+    }
+
+    .timer-display.warning {
+      background-color: #7f1d1d;
+      color: #fca5a5;
+      animation: pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.5;
+      }
+    }
+
+    .stats-container {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: -30px;
+    }
+
+    .stat-box {
+      background-color: #3f3f46;
+      border-radius: 0.5rem;
+      padding: 1.5rem 2rem;
+      text-align: center;
+      min-width: 120px;
+    }
+
+    .stat-label {
+      color: #9ca3af;
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #fff;
+    }
+
+    .stat-box:nth-child(2) .stat-value {
+      color: #fbbf24;
+    }
+
+    .stat-box:nth-child(3) .stat-value {
+      color: #f87171;
+    }
+
+    .point-values {
+      background-color: #3f3f46;
+      border-radius: 0.5rem;
+      padding: 1rem 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .point-values-title {
+      color: #9ca3af;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    .point-values-grid {
+      display: flex;
+      gap: 1.5rem;
+      justify-content: center;
+    }
+
+    .point-value-item {
+      text-align: center;
+    }
+
+    .point-value-color {
+      width: 32px;
+      height: 32px;
+      border-radius: 0.375rem;
+      margin: 0 auto 0.5rem;
+    }
+
+    .point-value-text {
+      font-weight: bold;
+      font-size: 0.875rem;
+    }
+
+    .point-value-item:nth-child(1) .point-value-text {
+      color: #f87171;
+    }
+
+    .point-value-item:nth-child(2) .point-value-text {
+      color: #60a5fa;
+    }
+
+    .point-value-item:nth-child(3) .point-value-text {
+      color: #4ade80;
+    }
+
+    .reset-btn {
+      padding: 0.75rem 2rem;
+      background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
+      color: #fff;
+      font-weight: bold;
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: all 200ms ease;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+    }
+
+    .reset-btn:hover {
+      background: linear-gradient(135deg, #0284c7 0%, #0891b2 100%);
+      transform: scale(1.05);
+    }
+
+    .reset-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* Game Over Screen */
+    .game-over-screen {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      z-index: 1000;
+    }
+
+    .game-over-content {
+      text-align: center;
+      max-width: 420px;
+    }
+
+    .game-over-title {
+      font-size: 3rem;
+      font-weight: bold;
+      color: #fff;
+      margin-bottom: 2rem;
+    }
+
+    .game-over-card {
+      background-color: #3f3f46;
+      border-radius: 0.5rem;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .game-over-label {
+      color: #9ca3af;
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .game-over-score {
+      font-size: 3.5rem;
+      font-weight: bold;
+      color: #06b6d4;
+      margin-bottom: 1.5rem;
+    }
+
+    .game-over-divider {
+      border-top: 1px solid #52525b;
+      padding-top: 1.5rem;
+      margin-top: 1.5rem;
+    }
+
+    .game-over-stat {
+      margin-bottom: 1rem;
+    }
+
+    .game-over-stat:last-child {
+      margin-bottom: 0;
+    }
+
+    .game-over-stat:nth-child(2) .game-over-value {
+      color: #fbbf24;
+    }
+
+    .game-over-stat:nth-child(3) .game-over-value {
+      color: #f87171;
+    }
+
+    .game-over-value {
+      font-size: 1.875rem;
+      font-weight: bold;
+      color: #fff;
+    }
+
+    .next-round-btn {
+      width: 100%;
+      padding: 1rem;
+      background: linear-gradient(135deg, #22c55e 0%, #10b981 100%);
+      color: #fff;
+      font-weight: bold;
+      font-size: 1.125rem;
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: all 200ms ease;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+    }
+
+    .next-round-btn:hover {
+      background: linear-gradient(135deg, #16a34a 0%, #059669 100%);
+      transform: scale(1.05);
+    }
+
+    .next-round-btn:active {
+      transform: scale(0.95);
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 640px) {
+      .start-content h1 {
+        font-size: 2.5rem;
+      }
+
+      .start-content p {
+        font-size: 1rem;
+      }
+
+      .header h1 {
+        font-size: 1.5rem;
+      }
+
+      .stats-container {
+        gap: 1rem;
+      }
+
+      .stat-box {
+        padding: 1rem 1.25rem;
+        min-width: 100px;
+      }
+
+      .stat-value {
+        font-size: 1.5rem;
+      }
+
+      .point-values-grid {
+        gap: 1rem;
+      }
+
+      .game-over-title {
+        font-size: 2.25rem;
+      }
+
+      .game-over-score {
+        font-size: 2.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="game-container">
+    <!-- Start Screen -->
+    <div id="startScreen" class="start-screen">
+      <div class="start-content">
+        <h1>Color Flash</h1>
+        <p>Click colored squares as they appear to score points. You have 60 seconds to rack up the highest score!</p>
+        <button class="start-btn" id="startBtn">Start Game</button>
+      </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="gameScreen" class="game-screen hidden">
+      <div class="header">
+        <h1>Color Flash</h1>
+        <p>Click colored squares as they appear to score points</p>
+        <div class="timer-display" id="timerDisplay">01:00</div>
+      </div>
+
+      <div class="grid-wrapper">
+        <div class="game-grid" id="gameGrid"></div>
+      </div>
+
+      <div class="score-area">
+        <!--<div class="timer-display" id="timerDisplay">01:00</div>-->
+
+        <div class="stats-container">
+          <div class="stat-box">
+            <div class="stat-label">SCORE</div>
+            <div class="stat-value" id="scoreDisplay">0</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">COMBO</div>
+            <div class="stat-value" id="comboDisplay">0</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">MISSED</div>
+            <div class="stat-value" id="missedDisplay">0</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="point-values">
+        <div class="point-values-title">POINT VALUES</div>
+        <div class="point-values-grid">
+          <div class="point-value-item">
+            <div class="point-value-color" style="background-color: #ef4444;"></div>
+            <div class="point-value-text">10 pts</div>
+          </div>
+          <div class="point-value-item">
+            <div class="point-value-color" style="background-color: #3b82f6;"></div>
+            <div class="point-value-text">5 pts</div>
+          </div>
+          <div class="point-value-item">
+            <div class="point-value-color" style="background-color: #22c55e;"></div>
+            <div class="point-value-text">1 pt</div>
+          </div>
+        </div>
+      </div>
+
+      <button class="reset-btn" id="resetBtn">Reset Game</button>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="gameOverScreen" class="game-over-screen hidden">
+      <div class="game-over-content">
+        <h1 class="game-over-title">GAME OVER</h1>
+        <div class="game-over-card">
+          <div class="game-over-label">FINAL SCORE</div>
+          <div class="game-over-score" id="finalScoreDisplay">0</div>
+          <div class="game-over-divider">
+            <div class="game-over-stat">
+              <div class="game-over-label">COMBOS</div>
+              <div class="game-over-value" id="finalComboDisplay">0</div>
+            </div>
+            <div class="game-over-stat">
+              <div class="game-over-label">MISSED</div>
+              <div class="game-over-value" id="finalMissedDisplay">0</div>
+            </div>
+          </div>
+        </div>
+        <button class="next-round-btn" id="nextRoundBtn">Next Round</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Game Constants
+    const GRID_SIZE = 64;
+    const FLASH_DURATION = 1200; // milliseconds
+    const FLASH_INTERVAL = 800; // milliseconds between flashes
+    const ROUND_DURATION = 60; // 60 seconds
+
+    // Game State
+    let gameState = {
+      squares: Array(GRID_SIZE).fill(null).map(() => ({ color: null, isActive: false })),
+      score: 0,
+      combo: 0,
+      missed: 0,
+      timeRemaining: ROUND_DURATION,
+      gameActive: false,
+      gameStarted: false,
+      gameOver: false,
+      finalScore: 0,
+    };
+
+    // DOM Elements
+    const startScreen = document.getElementById('startScreen');
+    const gameScreen = document.getElementById('gameScreen');
+    const gameOverScreen = document.getElementById('gameOverScreen');
+    const gameGrid = document.getElementById('gameGrid');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const comboDisplay = document.getElementById('comboDisplay');
+    const missedDisplay = document.getElementById('missedDisplay');
+    const timerDisplay = document.getElementById('timerDisplay');
+    const resetBtn = document.getElementById('resetBtn');
+    const startBtn = document.getElementById('startBtn');
+    const nextRoundBtn = document.getElementById('nextRoundBtn');
+    const finalScoreDisplay = document.getElementById('finalScoreDisplay');
+    const finalComboDisplay = document.getElementById('finalComboDisplay');
+    const finalMissedDisplay = document.getElementById('finalMissedDisplay');
+
+    // Start game
+    function startGame() {
+      startScreen.classList.add('hidden');
+      gameScreen.classList.remove('hidden');
+      gameOverScreen.classList.add('hidden');
+
+      gameState.gameActive = true;
+      gameState.gameStarted = true;
+
+      createGrid();
+      startFlashing();
+      startTimer();
+    }
+
+    // Initialize game
+    function initGame() {
+      createGrid();
+      startFlashing();
+      startTimer();
+    }
+
+    // Create the game grid
+    function createGrid() {
+      gameGrid.innerHTML = '';
+      for (let i = 0; i < GRID_SIZE; i++) {
+        const square = document.createElement('button');
+        square.className = 'grid-square';
+        square.dataset.index = i;
+        square.disabled = false;
+        square.addEventListener('click', () => handleSquareClick(i));
+        gameGrid.appendChild(square);
+      }
+    }
+
+    // Get points for a color
+    function getPointsForColor(color) {
+      switch (color) {
+        case 'red':
+          return 10;
+        case 'blue':
+          return 5;
+        case 'green':
+          return 1;
+        default:
+          return 0;
+      }
+    }
+
+    // Get random color
+    function getRandomColor() {
+      const colors = ['red', 'green', 'blue'];
+      return colors[Math.floor(Math.random() * colors.length)];
+    }
+
+    // Flash a random square
+    function flashRandomSquare() {
+      if (!gameState.gameActive) return;
+
+      const randomIndex = Math.floor(Math.random() * GRID_SIZE);
+      const color = getRandomColor();
+
+      gameState.squares[randomIndex] = { color, isActive: true };
+      updateSquareDisplay(randomIndex);
+
+      setTimeout(() => {
+        gameState.squares[randomIndex] = { color: null, isActive: false };
+        updateSquareDisplay(randomIndex);
+      }, FLASH_DURATION);
+    }
+
+    // Update square display
+    function updateSquareDisplay(index) {
+      const square = gameGrid.children[index];
+      const squareData = gameState.squares[index];
+
+      if (squareData.isActive && squareData.color) {
+        square.className = `grid-square ${squareData.color}`;
+      } else {
+        square.className = 'grid-square';
+      }
+      square.disabled = false;
+    }
+
+    // Handle square click
+    function handleSquareClick(index) {
+      const square = gameState.squares[index];
+
+      if (!square.isActive || !square.color) {
+        gameState.missed++;
+        gameState.combo = 0;
+      } else {
+        const points = getPointsForColor(square.color);
+        gameState.score += points;
+        gameState.combo++;
+
+        square.isActive = false;
+        square.color = null;
+        updateSquareDisplay(index);
+      }
+
+      updateDisplay();
+    }
+
+    // Start flashing sequence
+    let flashInterval;
+    function startFlashing() {
+      flashInterval = setInterval(flashRandomSquare, FLASH_INTERVAL);
+    }
+
+    // Start timer
+    let timerInterval;
+    function startTimer() {
+      timerInterval = setInterval(() => {
+        gameState.timeRemaining--;
+        updateTimerDisplay();
+
+        if (gameState.timeRemaining <= 0) {
+          endGame();
+        }
+      }, 1000);
+    }
+
+    // Update timer display
+    function updateTimerDisplay() {
+      const minutes = Math.floor(gameState.timeRemaining / 60);
+      const seconds = gameState.timeRemaining % 60;
+      timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+      if (gameState.timeRemaining <= 10) {
+        timerDisplay.classList.add('warning');
+      } else {
+        timerDisplay.classList.remove('warning');
+      }
+    }
+
+    // Update display
+    function updateDisplay() {
+      scoreDisplay.textContent = gameState.score;
+      comboDisplay.textContent = gameState.combo;
+      missedDisplay.textContent = gameState.missed;
+    }
+
+    // End game
+    function endGame() {
+      gameState.gameActive = false;
+      gameState.gameOver = true;
+      gameState.finalScore = gameState.score;
+
+      clearInterval(flashInterval);
+      clearInterval(timerInterval);
+
+      showGameOverScreen();
+    }
+
+    // Show game over screen
+    function showGameOverScreen() {
+      gameScreen.classList.add('hidden');
+      gameOverScreen.classList.remove('hidden');
+
+      finalScoreDisplay.textContent = gameState.finalScore;
+      finalComboDisplay.textContent = gameState.combo;
+      finalMissedDisplay.textContent = gameState.missed;
+    }
+
+    // Reset game
+    function resetGame() {
+      gameState = {
+        squares: Array(GRID_SIZE).fill(null).map(() => ({ color: null, isActive: false })),
+        score: 0,
+        combo: 0,
+        missed: 0,
+        timeRemaining: ROUND_DURATION,
+        gameActive: true,
+        gameStarted: true,
+        gameOver: false,
+        finalScore: 0,
+      };
+
+      startScreen.classList.add('hidden');
+      gameScreen.classList.remove('hidden');
+      gameOverScreen.classList.add('hidden');
+
+      updateDisplay();
+      updateTimerDisplay();
+      initGame();
+    }
+
+    // Event listeners
+    startBtn.addEventListener('click', startGame);
+    resetBtn.addEventListener('click', resetGame);
+    nextRoundBtn.addEventListener('click', resetGame);
+  </script>
+</body>
+</html>
